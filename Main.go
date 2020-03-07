@@ -37,7 +37,7 @@ func main() {
 	}
 
 	// Register messages
-	registerMessages(dg)
+	Messages.Register(dg)
 
 	// Open a websocket connection to Discord and begin listening.
 	err = dg.Open()
@@ -55,9 +55,4 @@ func main() {
 	// Cleanly close down the Discord session.
 	dg.Close()
 
-}
-
-// Register messages
-func registerMessages(dg *discordgo.Session) {
-	dg.AddHandler(Messages.About)
 }

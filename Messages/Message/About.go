@@ -1,4 +1,4 @@
-package Messages
+package Message
 
 import "github.com/bwmarrin/discordgo"
 
