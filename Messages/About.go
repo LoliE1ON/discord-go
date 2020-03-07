@@ -9,7 +9,6 @@ func About(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// If the message is "ping" reply with "Pong!"
 	if m.Content == "!miku" {
 		s.ChannelMessageSend(m.ChannelID, "Baka!")
 	}
