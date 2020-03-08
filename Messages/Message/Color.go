@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/LoliE1ON/discord-go/Helpers/SliceHelper"
+
 	"github.com/pkg/errors"
 
 	"github.com/LoliE1ON/discord-go/Helpers/HexHelper"
@@ -40,15 +42,19 @@ func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		// Remove old roles
-		err = removeRoles()
+		// Remove old roles user
+		err = removeUserRoles()
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
 		// Assign role
-		session.GuildMemberRoleAdd(message.GuildID, message.Author.ID, roleId)
+		err = session.GuildMemberRoleAdd(message.GuildID, message.Author.ID, roleId)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
 		session.ChannelMessageSend(message.ChannelID, "Role assign")
 	}
@@ -100,7 +106,7 @@ func getRole() (roleId string, err error) {
 }
 
 // Remove old roles user
-func removeRoles() (err error) {
+func removeUserRoles() (err error) {
 
 	// Fetching server roles
 	serverRoles, err := session.GuildRoles(message.GuildID)
@@ -110,26 +116,20 @@ func removeRoles() (err error) {
 	}
 
 	// Fetching user roles
-	roles := message.Member.Roles
+	userRoles := message.Member.Roles
 
-	// Govnokod
+	// Search role and remove role
 	for _, serverRole := range serverRoles {
+
 		_, err := HexHelper.ParseHexColor(serverRole.Name)
-		if err == nil && contains(roles, serverRole.ID) == true {
-			session.GuildMemberRoleRemove(message.GuildID, message.Author.ID, serverRole.ID)
+		if err == nil && SliceHelper.Contains(userRoles, serverRole.ID) {
+			errRemoveRole := session.GuildMemberRoleRemove(message.GuildID, message.Author.ID, serverRole.ID)
+			if errRemoveRole != nil {
+				return errors.Wrap(errRemoveRole, "Error remove role")
+			}
+			log.Println("Remove role", serverRole.Name)
 		}
 	}
 
 	return
-}
-
-// TODO: Put in helper
-func contains(slice []string, item string) bool {
-	set := make(map[string]struct{}, len(slice))
-	for _, s := range slice {
-		set[s] = struct{}{}
-	}
-
-	_, ok := set[item]
-	return ok
 }
