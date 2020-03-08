@@ -2,8 +2,9 @@ package Message
 
 import (
 	"log"
-	"strconv"
 	"strings"
+
+	"github.com/LoliE1ON/discord-go/Messages/RichEmbed"
 
 	"github.com/LoliE1ON/discord-go/Helpers/SliceHelper"
 
@@ -29,9 +30,9 @@ func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 		color = args[1]
 
 		// Validate hex value
-		_, err := HexHelper.ParseHexColor(color)
+		err := validateHexColor()
 		if err != nil {
-			session.ChannelMessageSend(message.ChannelID, "Invalid hex value")
+			log.Println(err)
 			return
 		}
 
@@ -56,7 +57,16 @@ func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		session.ChannelMessageSend(message.ChannelID, "Role assign")
+		// Get message
+		colorAssign, err := RichEmbed.ColorAssign(color)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		// Send message
+		session.ChannelMessageSendEmbed(message.ChannelID, &colorAssign)
+
 	}
 
 }
@@ -87,12 +97,11 @@ func getRole() (roleId string, err error) {
 	}
 
 	// Convert hex to int
-	n, err := strconv.ParseInt(strings.Replace(color, "#", "", -1), 16, 32)
+	hexInt, err := HexHelper.HexToInt(color)
 	if err != nil {
-		err = errors.Wrap(err, "Error convert ")
+		err = errors.Wrap(err, "Error convert hex to int")
 		return
 	}
-	hexInt := int(n)
 
 	// Edit new role
 	newRole, err := session.GuildRoleEdit(message.GuildID, role.ID, color, hexInt, false, role.Permissions, false)
@@ -131,5 +140,25 @@ func removeUserRoles() (err error) {
 		}
 	}
 
+	return
+}
+
+// Validate hex color
+func validateHexColor() (err error) {
+
+	_, err = HexHelper.ParseHexColor(color)
+	if err != nil {
+
+		// Get error
+		colorIncorrect := RichEmbed.ColorIncorrect
+
+		// Send error
+		_, err = session.ChannelMessageSendEmbed(message.ChannelID, &colorIncorrect)
+		if err != nil {
+			return err
+		}
+
+		return
+	}
 	return
 }
