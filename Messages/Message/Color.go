@@ -21,6 +21,7 @@ var (
 	message *discordgo.MessageCreate
 )
 
+// Change role color
 func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 	session, message = s, m
 
@@ -44,7 +45,7 @@ func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		// Remove old roles user
-		err = removeUserRoles()
+		err = RemoveUserRoles(session, message)
 		if err != nil {
 			log.Println(err)
 			return
@@ -69,6 +70,35 @@ func Color(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	}
 
+}
+
+// Remove old roles user
+func RemoveUserRoles(s *discordgo.Session, m *discordgo.MessageCreate) (err error) {
+
+	// Fetching server roles
+	serverRoles, err := s.GuildRoles(m.GuildID)
+	if err != nil {
+		err = errors.Wrap(err, "Error fetching server roles")
+		return
+	}
+
+	// Fetching user roles
+	userRoles := m.Member.Roles
+
+	// Search role and remove role
+	for _, serverRole := range serverRoles {
+
+		_, err := HexHelper.ParseHexColor(serverRole.Name)
+		if err == nil && SliceHelper.Contains(userRoles, serverRole.ID) {
+			errRemoveRole := s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, serverRole.ID)
+			if errRemoveRole != nil {
+				return errors.Wrap(errRemoveRole, "Error remove role")
+			}
+			log.Println("Remove role", serverRole.Name)
+		}
+	}
+
+	return
 }
 
 // Create new role or return exist role
@@ -111,35 +141,6 @@ func getRole() (roleId string, err error) {
 	}
 
 	roleId = newRole.ID
-	return
-}
-
-// Remove old roles user
-func removeUserRoles() (err error) {
-
-	// Fetching server roles
-	serverRoles, err := session.GuildRoles(message.GuildID)
-	if err != nil {
-		err = errors.Wrap(err, "Error fetching server roles")
-		return
-	}
-
-	// Fetching user roles
-	userRoles := message.Member.Roles
-
-	// Search role and remove role
-	for _, serverRole := range serverRoles {
-
-		_, err := HexHelper.ParseHexColor(serverRole.Name)
-		if err == nil && SliceHelper.Contains(userRoles, serverRole.ID) {
-			errRemoveRole := session.GuildMemberRoleRemove(message.GuildID, message.Author.ID, serverRole.ID)
-			if errRemoveRole != nil {
-				return errors.Wrap(errRemoveRole, "Error remove role")
-			}
-			log.Println("Remove role", serverRole.Name)
-		}
-	}
-
 	return
 }
 
