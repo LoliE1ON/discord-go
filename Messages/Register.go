@@ -8,4 +8,5 @@ import (
 // Register messages
 func Register(dg *discordgo.Session) {
 	dg.AddHandler(Message.About)
+	dg.AddHandler(Message.Color)
 }
